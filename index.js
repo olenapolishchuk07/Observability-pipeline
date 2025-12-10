@@ -1,21 +1,25 @@
-const express = require("express");
+const express = require('express');
+const client = require('prom-client');
+
 const app = express();
-const port = 3000;
+const register = client.register;
 
-app.get("/", (req, res) => {
-  res.send("Hello Observability!");
+// Створюємо просту метрику CPU (як приклад)
+const counter = new client.Counter({
+  name: 'node_requests_total',
+  help: 'Total number of requests'
 });
 
-// Prometheus metrics
-const client = require("prom-client");
-const collectDefaultMetrics = client.collectDefaultMetrics;
-collectDefaultMetrics();
-
-app.get("/metrics", async (req, res) => {
-  res.set("Content-Type", client.register.contentType);
-  res.end(await client.register.metrics());
+// Endpoint для Prometheus
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
 });
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+// Лічильник для всіх запитів
+app.get('/', (req, res) => {
+  counter.inc(); // збільшуємо лічильник
+  res.send('Hello Observability!');
 });
+
+app.listen(3000, () => console.log('Server running on port 3000'));
